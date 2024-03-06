@@ -1,14 +1,16 @@
 # XPTV
 # 海外看
 DOMAIN-SUFFIX,cdn.kin6c1.com
-DOMAIN-SUFFIX,cdn.iz8qkg.com 
-DOMAIN-SUFFIX,cdn.v82u1l.com 
-DOMAIN-SUFFIX,haiwaikan.com 
+DOMAIN-SUFFIX,cdn.iz8qkg.com
+DOMAIN-SUFFIX,cdn.v82u1l.com
+DOMAIN-SUFFIX,haiwaikan.com
 # 欧乐影视
-DOMAIN-SUFFIX,olelive 
-DOMAIN-SUFFIX,olevod 
-DOMAIN-SUFFIX,olemovienews 
+DOMAIN-SUFFIX,olelive
+DOMAIN-SUFFIX,olevod
+DOMAIN-SUFFIX,olemovienews
+# 玩偶哥哥
 DOMAIN,www.wogg.link
 DOMAIN,www.wogg.xyz
 DOMAIN,tvfan.xxooo.cf
+# missav
 DOMAIN,missav.com
