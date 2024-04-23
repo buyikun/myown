@@ -1,35 +1,31 @@
 # XPTV
 # 海外看
-DOMAIN-SUFFIX,cdn.kin6c1.com
-DOMAIN-SUFFIX,cdn.iz8qkg.com
-DOMAIN-SUFFIX,cdn.v82u1l.com
-DOMAIN-SUFFIX,haiwaikan.com
+DOMAIN-SUFFIX,cdn.kin6c1.com,全球加速
+DOMAIN-SUFFIX,cdn.iz8qkg.com,全球加速
+DOMAIN-SUFFIX,cdn.v82u1l.com,全球加速
+DOMAIN-SUFFIX,haiwaikan.com,全球加速
 # 欧乐影视
-DOMAIN-SUFFIX,olelive
-DOMAIN-SUFFIX,olevod
-DOMAIN-SUFFIX,olemovienews
-# 玩偶哥哥
-DOMAIN,www.wogg.link
-DOMAIN,www.wogg.xyz
-DOMAIN,tvfan.xxooo.cf
+DOMAIN-KEYWORD,olelive,全球加速
+DOMAIN-KEYWORD,olevod,全球加速
+DOMAIN-KEYWORD,olemovienews,全球加速
 # missav
-DOMAIN,missav.com
+DOMAIN,missav.com,全球加速
 
 # emby
 # ACA
-DOMAIN-KEYWORD,aca.best
+DOMAIN-KEYWORD,aca.best,全球加速
 # cherry
-DOMAIN,cherrytv.one
+DOMAIN,cherrytv.one,全球加速
 # porn
-DOMAIN,pornemby.club
+DOMAIN,pornemby.club,全球加速
 # misty 
-DOMAIN,misty.ltd
+DOMAIN,misty.ltd,全球加速
 # apop
-DOMAIN-KEYWORD,apopcloud
+DOMAIN-KEYWORD,apopcloud,全球加速
 
 
 # 该死的江苏反诈
 # mjjemby
-DOMAIN-KEYWORD,mjjemby
+DOMAIN-KEYWORD,mjjemby,全球加速
 # guguemby
-DOMAIN-KEYWORD,gugumedia
+DOMAIN-KEYWORD,gugumedia,全球加速
