@@ -31,3 +31,7 @@ DOMAIN-KEYWORD,mjjemby,全球加速
 DOMAIN-KEYWORD,gugumedia,全球加速
 # Tecar
 DOMAIN-KEYWORD,carlos.trade,全球加速
+
+# 无意义的
+# iptv中国地区（含港澳台）
+DOMAIN,www.stream-link.org,美国节点
