@@ -36,4 +36,4 @@ DOMAIN-KEYWORD,carlos.trade,全球加速
 # iptv中国地区（含港澳台）
 DOMAIN,www.stream-link.org,美国节点
 # epg
-DOMAIN,epg.aptvapp.com,全球加速
+DOMAIN-KEYWORD,epg,全球加速
