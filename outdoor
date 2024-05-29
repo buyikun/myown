@@ -39,3 +39,7 @@ DOMAIN,www.stream-link.org,美国节点
 DOMAIN-KEYWORD,epg,全球加速
 # 订阅代理
 DOMAIN,yang-1989.eu.org,全球加速
+
+# Reader
+DOMAIN,app.koyeb.com,美国节点
+DOMAIN,constant-fulvia-buyikun-ff01d8b0.koyeb.app,美国节点
