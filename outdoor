@@ -45,7 +45,7 @@ DOMAIN,cc.coemn.com,全球加速
 
 # APTV
 # iptv中国地区（含港澳台）
-DOMAIN-KEYWORD,stream-link.org,美国节点
+DOMAIN-KEYWORD,stream-link.org,香港节点
 # epg
 DOMAIN-KEYWORD,epg,全球加速
 # 订阅代理
