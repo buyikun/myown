@@ -15,6 +15,7 @@ DOMAIN,missav.com,全球加速
 # emby
 # ACA
 DOMAIN-KEYWORD,aca.best,全球加速
+DOMAIN,aca.misakaf.org,全球加速
 # cherry
 DOMAIN,cherrytv.one,全球加速
 # porn
@@ -31,6 +32,9 @@ DOMAIN,embyplus.org,全球加速
 # DOMAIN-SUFFIX,carryz.net,全球加速
 # 星云
 DOMAIN-KEYWORD,nebula-media,全球加速
+
+#plex
+DOMAIN,plex.20120714.xyz,手动切换
 
 
 # 该死的江苏反诈
