@@ -32,6 +32,8 @@ DOMAIN,embyplus.org,全球加速
 # DOMAIN-SUFFIX,carryz.net,全球加速
 # 星云
 DOMAIN-KEYWORD,nebula-media,全球加速
+# mefun
+DOMAIN,music.mefun.org,全球加速
 
 #plex
 DOMAIN,plex.20120714.xyz,美国节点
