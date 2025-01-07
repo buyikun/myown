@@ -36,7 +36,7 @@ DOMAIN-KEYWORD,nebula-media,全球加速
 DOMAIN,music.mefun.org,全球加速
 
 #plex
-DOMAIN,plex.20120714.xyz,美国节点
+#DOMAIN,plex.20120714.xyz,美国节点
 DOMAIN-KEYWORD,plex.tv,美国节点
 #trakt
 DOMAIN-KEYWORD,trakt.tv,美国节点
