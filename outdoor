@@ -11,6 +11,8 @@ DOMAIN-KEYWORD,olemovienews,全球加速
 DOMAIN,www.olehdtv.com,全球加速
 # missav
 DOMAIN,missav.com,全球加速
+# 独播库
+DOMAIN-KEYWORD,duboku，全球加速
 
 # emby
 # ACA
