@@ -43,6 +43,8 @@ DOMAIN-KEYWORD,plex.tv,美国节点
 DOMAIN-KEYWORD,trakt.tv,美国节点
 #imdb
 DOMAIN-KEYWORD,imdb,美国节点
+#tmdb
+DOMAIN-KEYWORD,tmdb,美国节点
 
 
 # 该死的江苏反诈
