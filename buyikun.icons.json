@@ -3,10 +3,6 @@
   "description": "收集一些自己脚本用到的图标",
   "icons": [
     {
-      "name": "loon.png",
-      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/loon.png"
-    },
-    {
       "name": "1.png",
       "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/1.png"
     },
