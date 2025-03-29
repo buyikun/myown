@@ -1,5 +1,142 @@
 {
   "name": "buyikun图标订阅",
   "description": "收集一些自己脚本用到的图标",
-  "icons": []
+  "icons": [
+    {
+      "name": "Spotify.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Spotify.png"
+    },
+    {
+      "name": "Argentina.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Argentina.png"
+    },
+    {
+      "name": "Paypal.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Paypal.png"
+    },
+    {
+      "name": "Singapore.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Singapore.png"
+    },
+    {
+      "name": "Google.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Google.png"
+    },
+    {
+      "name": "South_Korea.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/South_Korea.png"
+    },
+    {
+      "name": "Speedtest.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Speedtest.png"
+    },
+    {
+      "name": "Steam.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Steam.png"
+    },
+    {
+      "name": "United_States.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/United_States.png"
+    },
+    {
+      "name": "Twitter.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Twitter.png"
+    },
+    {
+      "name": "India.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/India.png"
+    },
+    {
+      "name": "Telegram.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Telegram.png"
+    },
+    {
+      "name": "GitHub.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/GitHub.png"
+    },
+    {
+      "name": "BiliBili.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/BiliBili.png"
+    },
+    {
+      "name": "Taiwan.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Taiwan.png"
+    },
+    {
+      "name": "Canada.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Canada.png"
+    },
+    {
+      "name": "Gmail.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Gmail.png"
+    },
+    {
+      "name": "DingTalk.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/DingTalk.png"
+    },
+    {
+      "name": "Netflix.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Netflix.png"
+    },
+    {
+      "name": "TikTok.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/TikTok.png"
+    },
+    {
+      "name": "Turkey.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Turkey.png"
+    },
+    {
+      "name": "Apple.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Apple.png"
+    },
+    {
+      "name": "Japan.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Japan.png"
+    },
+    {
+      "name": "Hong_Kong.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Hong_Kong.png"
+    },
+    {
+      "name": "Auto_Speed.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Auto_Speed.png"
+    },
+    {
+      "name": "United_Kingdom.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/United_Kingdom.png"
+    },
+    {
+      "name": "Instagram.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Instagram.png"
+    },
+    {
+      "name": "Russia.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Russia.png"
+    },
+    {
+      "name": "Malasya.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Malasya.png"
+    },
+    {
+      "name": "Macao.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Macao.png"
+    },
+    {
+      "name": "YouTube.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/YouTube.png"
+    },
+    {
+      "name": "Microsoft.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Microsoft.png"
+    },
+    {
+      "name": "France.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/France.png"
+    },
+    {
+      "name": "NetEase_Music.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/NetEase_Music.png"
+    }
+  ]
 }
