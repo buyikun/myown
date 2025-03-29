@@ -3,10 +3,6 @@
   "description": "收集一些自己脚本用到的图标",
   "icons": [
     {
-      "name": "1.png",
-      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/1.png"
-    },
-    {
       "name": "Spotify.png",
       "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Spotify.png"
     },
@@ -27,6 +23,10 @@
       "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Google.png"
     },
     {
+      "name": "chatgpt.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/chatgpt.png"
+    },
+    {
       "name": "South_Korea.png",
       "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/South_Korea.png"
     },
@@ -45,6 +45,10 @@
     {
       "name": "Twitter.png",
       "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/Twitter.png"
+    },
+    {
+      "name": "1.png",
+      "url": "https://raw.githubusercontent.com/buyikun/myown/main/icon/1.png"
     },
     {
       "name": "India.png",
