@@ -33,6 +33,8 @@ DOMAIN,embyplus.org,全球加速
 DOMAIN-KEYWORD,nebula-media,全球加速
 # mefun
 DOMAIN,music.mefun.org,全球加速
+#jms
+DOMAIN,mini.jmsuper.com,香港节点
 
 #plex
 DOMAIN,plex.tv,美国节点
