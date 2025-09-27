@@ -35,6 +35,8 @@ DOMAIN-KEYWORD,nebula-media,全球加速
 DOMAIN,music.mefun.org,全球加速
 #jms
 DOMAIN,mini.jmsuper.com,香港节点
+#vercel
+DOMAIN,vercel.app,美国节点
 
 #plex
 DOMAIN,plex.tv,美国节点
