@@ -4,12 +4,7 @@ DOMAIN,hxd.as174.de
 #1111
 DOMAIN,cf.xmsl.org
 #IrisEmby
-DOMAIN,cdn.irisnb.com,DIRECT
-DOMAIN,uscdn.irisnb.com,DIRECT
-DOMAIN,ustream.irisnb.com,DIRECT
-DOMAIN,iris4837.5203166.xyz,DIRECT
-DOMAIN,irisus.5203166.xyz,DIRECT
-IP-CIDR6,2409:8c54:a810:1:0:5:0:2e/128,DIRECT
+DOMAIN-SUFFIX,iris520.us
 #emos
 DOMAIN,emos.dolby.dpdns.org,DIRECT
 DOMAIN,emos.movier.ink,DIRECT
