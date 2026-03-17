@@ -6,6 +6,7 @@ DOMAIN,cf.xmsl.org
 #IrisEmby
 DOMAIN-SUFFIX,iris520.us
 #通用反代线路
+DOMAIN,emby.buyikun.dpdns.org,DIRECT
 DOMAIN,auto.liuer.indevs.in,DIRECT
 DOMAIN,auto.dolby.dpdns.org,DIRECT
 DOMAIN,emby.noomi.eu.cc,DIRECT
