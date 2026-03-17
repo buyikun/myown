@@ -5,14 +5,12 @@ DOMAIN,hxd.as174.de
 DOMAIN,cf.xmsl.org
 #IrisEmby
 DOMAIN-SUFFIX,iris520.us
-#emos
-DOMAIN,emos.dolby.dpdns.org,DIRECT
-DOMAIN,emos.movier.ink,DIRECT
-DOMAIN,emos.de5.net,DIRECT
-DOMAIN,emos.078899.xyz,DIRECT
-DOMAIN,emos-cn.078899.xyz,DIRECT
-DOMAIN,emos.200038.xyz,DIRECT
-DOMAIN,direct.emos.lol,DIRECT
+#通用反代线路
+DOMAIN,auto.liuer.indevs.in,DIRECT
+DOMAIN,auto.dolby.dpdns.org,DIRECT
+DOMAIN,emby.noomi.eu.cc,DIRECT
+DOMAIN,fd.dirige.de5.net,DIRECT
+DOMAIN,auto.embys.dpdns.org,DIRECT
 
 DOMAIN,www.jotaro.icu
 #反代
