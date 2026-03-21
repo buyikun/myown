@@ -5,6 +5,8 @@ DOMAIN,hxd.as174.de
 DOMAIN,cf.xmsl.org
 #IrisEmby
 DOMAIN-SUFFIX,iris520.us
+#月饼
+DOMAIN-SUFFIX,emby.my
 #通用反代线路
 DOMAIN,emby.buyikun.dpdns.org,DIRECT
 DOMAIN,auto.liuer.indevs.in,DIRECT
