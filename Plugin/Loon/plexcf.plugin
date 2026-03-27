@@ -1,14 +1,17 @@
-#!name=Plex改CF直连(带路径)
-#!desc=旧域名重定向到 /plex 反代路径，并直连CF
+#!name=Plex改CF直连(修正版)
+#!desc=旧域名重定向到 CF 反代 /plex，保持直连
 #!author=ChatGPT
 
 [Rule]
+# 强制直连
 DOMAIN,plex.20120714.xyz,DIRECT
 DOMAIN,emby.buyikun.dpdns.org,DIRECT
 
 [Rewrite]
-# 关键：保留路径并拼接到 /plex
-^https?:\/\/plex\.20120714\.xyz(.*) https://emby.buyikun.dpdns.org/plex$1 302
+# 根路径单独处理，保证访问 / 返回 /plex/
+^https?:\/\/plex\.20120714\.xyz$ https://emby.buyikun.dpdns.org/plex/ 302
+# 其他路径保持原样拼接
+^https?:\/\/plex\.20120714\.xyz\/(.*) https://emby.buyikun.dpdns.org/plex/$1 302
 
 [Mitm]
 hostname = plex.20120714.xyz
