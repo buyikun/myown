@@ -1,0 +1,14 @@
+#!name=iios 自动签到
+#!desc=获取 token + 每日自动签到
+#!author=ChatGPT
+#!homepage=https://www.iios.fun
+
+[Script]
+# 捕获 token
+http-request ^https:\/\/www\.iios\.fun\/api\/user\/info script-path=https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/iios_checkin.js, requires-body=false, timeout=10, tag=iios_token
+
+# 每日签到
+cron "5 0 * * *" script-path=https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/iios_checkin.js, timeout=60, tag=iios_checkin
+
+[MITM]
+hostname = www.iios.fun
