@@ -1,0 +1,96 @@
+// ===== SenPlayer 支持（新增）=====
+function buildSenPlayer(url) {
+  if (!url) return null;
+  return {
+    name: "SenPlayer",
+    type: "external",
+    url: `senplayer://x-callback-url/play?url=${encodeURIComponent(url)}`
+  };
+}
+
+// ===== 原播放器构建（示例保留）=====
+function buildInfuse(url) {
+  return {
+    name: "Infuse",
+    type: "external",
+    url: `infuse://x-callback-url/play?url=${encodeURIComponent(url)}`
+  };
+}
+
+function buildEplayerX(url) {
+  return {
+    name: "EplayerX",
+    type: "external",
+    url: `eplayerx://play?url=${encodeURIComponent(url)}`
+  };
+}
+
+function buildForward(url) {
+  return {
+    name: "Forward",
+    type: "external",
+    url: `forward://play?url=${encodeURIComponent(url)}`
+  };
+}
+
+// ===== 核心注入逻辑（统一处理）=====
+function injectPlayers(playUrl) {
+  const players = [];
+
+  if (!playUrl) return players;
+
+  // 原有播放器
+  players.push(buildInfuse(playUrl));
+  players.push(buildEplayerX(playUrl));
+  players.push(buildForward(playUrl));
+
+  // ✅ 新增 SenPlayer
+  const sen = buildSenPlayer(playUrl);
+  if (sen) players.push(sen);
+
+  return players;
+}
+
+// ===== 示例：处理 watchnow =====
+function handleWatchNow(body) {
+  try {
+    const data = JSON.parse(body);
+
+    if (data && data.sources) {
+      data.sources.forEach(item => {
+        const playUrl = item.url || item.link || item.playback_url;
+
+        if (playUrl) {
+          const players = injectPlayers(playUrl);
+
+          // 注入为新的 provider
+          players.forEach(p => {
+            data.sources.push({
+              name: p.name,
+              type: "external",
+              url: p.url
+            });
+          });
+        }
+      });
+    }
+
+    return JSON.stringify(data);
+  } catch (e) {
+    return body;
+  }
+}
+
+// ===== Loon 入口 =====
+if (typeof $response !== "undefined") {
+  let body = $response.body;
+
+  // 只处理 watchnow（核心）
+  if ($request.url.includes("watchnow")) {
+    body = handleWatchNow(body);
+  }
+
+  $done({ body });
+} else {
+  $done({});
+}
