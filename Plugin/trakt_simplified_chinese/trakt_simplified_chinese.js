@@ -8,12 +8,12 @@ if (body) {
   } catch {}
 }
 
-// 播放器定义：新增 SenPlayer
+// 播放器定义（按你提供的官方 SenPlayer URL Scheme 修正）
 const PLAYERS = {
   infuse: { name: "Infuse", scheme: "infuse://x-callback-url/play?tmdb=" },
   eplayerx: { name: "EplayerX", scheme: "eplayerx://play?tmdb=" },
   forward: { name: "Forward", scheme: "forward://play?tmdb=" },
-  senplayer: { name: "SenPlayer", scheme: "senplayer://play?tmdb=" }
+  senplayer: { name: "SenPlayer", scheme: "senplayer://x-callback-url/play?tmdb=" }
 };
 
 const CACHE_KEY_PREFIX = "trakt_trans_";
@@ -68,7 +68,7 @@ async function translateComments(comments) {
   }
 }
 
-// 注入所有播放器到 Trakt watchnow
+// 注入播放器到 Trakt watchnow
 function patchWatchNow(data) {
   if (!data || !data.length) return;
   for (const item of data) {
@@ -152,7 +152,7 @@ function patchSofaCountries(data) {
   }
 }
 
-// 只保留最新一集
+// 历史剧集只保留最新一集
 function filterLatestEpisodes(items) {
   if (!latestHistoryEpisodeOnly || !items || !items.length) return items;
   const map = new Map();
@@ -178,7 +178,7 @@ function filterLatestEpisodes(items) {
   return Array.from(map.values());
 }
 
-// 请求 limit 改为 1000
+// 请求条数放大到 1000
 function increaseLimit(uri) {
   if (!latestHistoryEpisodeOnly) return uri;
   const u = new URL(uri);
@@ -186,7 +186,7 @@ function increaseLimit(uri) {
   return u.toString();
 }
 
-// 优先简体中文
+// 优先简体中文翻译
 function prioritizeSimplifiedChinese(trans) {
   if (!trans) return trans;
   const cn = trans.filter(t => t.country === "CN" && t.language === "zh");
@@ -197,7 +197,6 @@ function prioritizeSimplifiedChinese(trans) {
 }
 
 async function process() {
-  // 请求阶段改写
   if (method === "GET") {
     if (url.includes("/sync/history/episodes") || /\/users\/[^/]+\/history\/episodes/.test(url)) {
       $done({ url: increaseLimit(url) });
@@ -205,37 +204,31 @@ async function process() {
     }
   }
 
-  // 响应阶段改写
   if (method === "RESPONSE") {
-    // 历史剧集只保留最新
     if (/\/history\/episodes($|\?)/.test(url)) {
       obj = filterLatestEpisodes(obj);
       $done({ body: JSON.stringify(obj) });
       return;
     }
 
-    // 简体翻译优先
     if (/\/translations\/zh$/.test(url)) {
       obj = prioritizeSimplifiedChinese(obj);
       $done({ body: JSON.stringify(obj) });
       return;
     }
 
-    // 评论翻译
     if (/\/comments|\/replies/.test(url)) {
       await translateComments(obj);
       $done({ body: JSON.stringify(obj) });
       return;
     }
 
-    // 注入播放器到 Trakt
     if (/\/watchnow($|\?)/.test(url)) {
       patchWatchNow(obj);
       $done({ body: JSON.stringify(obj) });
       return;
     }
 
-    // 注入 Sofa Time / TMDB
     if (/watch\/providers\/(movie|tv)/.test(url)) {
       patchProviders(obj);
       $done({ body: JSON.stringify(obj) });
@@ -254,7 +247,6 @@ async function process() {
       return;
     }
 
-    // 去广告 + 假 VIP
     if (/\/users\/settings/.test(url)) {
       if (obj) {
         obj.vip = true;
@@ -268,4 +260,4 @@ async function process() {
   $done({});
 }
 
-process().catch(e => $done({}));
+process().catch(() => $done({}));
