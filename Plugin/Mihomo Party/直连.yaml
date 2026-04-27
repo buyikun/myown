@@ -1,0 +1,64 @@
+# 添加直连规则示例
++rules:
+  # ===== hxd =====
+  - "DOMAIN,cf.bili.rip,DIRECT"
+  - "DOMAIN,hxd.as174.de,DIRECT"
+
+  # ===== 1111 =====
+  - "DOMAIN,cf.xmsl.org,DIRECT"
+
+  # ===== IrisEmby =====
+  - "DOMAIN-SUFFIX,iris520.us,DIRECT"
+
+  # ===== 通用反代线路 =====
+  - "DOMAIN,emby.buyikun.dpdns.org,DIRECT"
+  - "DOMAIN,auto.liuer.indevs.in,DIRECT"
+  - "DOMAIN,auto.dolby.dpdns.org,DIRECT"
+  - "DOMAIN,emby.noomi.eu.cc,DIRECT"
+  - "DOMAIN,fd.dirige.de5.net,DIRECT"
+  - "DOMAIN,auto.embys.dpdns.org,DIRECT"
+  - "DOMAIN,plex.2699699.xyz,DIRECT"
+  - "DOMAIN,www.jotaro.icu,DIRECT"
+
+  # ===== 反代 =====
+  - "DOMAIN,myg.rfc.280454.xyz,DIRECT"
+
+  # ===== 小说 =====
+  - "DOMAIN,www.mayitxt.org,DIRECT"
+  - "DOMAIN-KEYWORD,minguoqiren,DIRECT"
+
+  # ===== Plex 官方 =====
+  - "DOMAIN,v4.plex.tv,DIRECT"
+  - "DOMAIN,plexapp.com,DIRECT"
+  - "DOMAIN,plex.direct,DIRECT"
+
+  # ===== yuheng =====
+  - "DOMAIN-KEYWORD,yuheng,DIRECT"
+  - "DOMAIN-KEYWORD,yqc-premium,DIRECT"
+
+  # ===== jstv / 影视 =====
+  - "DOMAIN,wogg.xxooo.cf,DIRECT"
+  - "DOMAIN,wogg.333232.xyz,DIRECT"
+  - "DOMAIN,www.wogg.one,DIRECT"
+  - "DOMAIN,www.wogg.lol,DIRECT"
+  - "DOMAIN,666.666291.xyz,DIRECT"
+  - "DOMAIN,www.muou.asia,DIRECT"
+  - "DOMAIN,www.muou.site,DIRECT"
+  - "DOMAIN,feimaoai.site,DIRECT"
+  - "DOMAIN,feimao666.fun,DIRECT"
+  - "DOMAIN,feimao888.fun,DIRECT"
+  - "DOMAIN,mihdr.top,DIRECT"
+  - "DOMAIN,www.miqk.cc,DIRECT"
+  - "DOMAIN,www.mihdr.top,DIRECT"
+  - "DOMAIN,www.zhizhenpan.fun,DIRECT"
+  - "DOMAIN,tv.yydsys.top,DIRECT"
+  - "DOMAIN,tv.yydsys.cc,DIRECT"
+  - "DOMAIN,tv.214521.xyz,DIRECT"
+  - "DOMAIN,woog.nxog.eu.org,DIRECT"
+  - "DOMAIN,xhww.net,DIRECT"
+  - "DOMAIN,2xiaopan.fun,DIRECT"
+  - "DOMAIN,erxiaofn.click,DIRECT"
+  - "DOMAIN,erxiaofn.site,DIRECT"
+  - "DOMAIN,www.xhww.net,DIRECT"
+  - "DOMAIN,xiaoer.5568.eu.org,DIRECT"
+  - "DOMAIN,xsayang.fun,DIRECT"
