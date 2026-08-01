@@ -35,6 +35,7 @@ DOMAIN,music.mefun.org,全球加速
 DOMAIN,mini.jmsuper.com,新加坡节点
 #vercel
 DOMAIN,vercel.app,美国节点
+DOMAIN,vercel.buyikun.dpdns.org,美国节点
 #dpdns.org
 #DOMAIN-SUFFIX,dpdns.org,美国节点
 #sntp
