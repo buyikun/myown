@@ -1,19 +1,25 @@
 /*
- * CapyPlayer Widget - Trakt 智能追剧 (单剧去重·官方纯净同步版)
+ * CapyPlayer Widget - Trakt 继续观看 Fast (OAuth 版)
+ * v1.3.0-fast-oauth
  *
- * 核心优化：
- * 1. 同一剧集去重：同部剧只显示最新暂停的一集，拒绝列表重复。
- * 2. 官方隐藏同步：自动拉取 Trakt 隐藏列表，剔除不在官方 Up Next 中的幽灵老剧。
- * 3. 排序修复：严格按照最后观看/暂停时间排序，确保最近活跃的在最前。
- * 4. 完美跳转：坚决保留原生 currentSeason/Episode 字段与 link 魔法。
+ * 目标：
+ * - 解决 loadContinueWatching 超过 30 秒超时，极速加载，不卡顿
+ * - 增加 OAuth 授权，获取真实播放进度（含电影）
+ * - 按照最新播放（或上映/播出时间）排序
+ * - 同一部剧多集暂停去重，只保留最新的一集
+ *
+ * 保留：
+ * - Trakt 观看记录，下一集判断，追平隐藏，新集重新出现
+ * - Trakt aired_episodes 兜底，Trakt 评分优先 -> TMDB 兜底
+ * - 🔶 / 🔷，固定“第X集”
  */
 
 WidgetMetadata = {
-    id: "trakt_continue_oauth_ultimate_pure",
-    title: "Trakt 恢复播放 (纯净去重版)",
-    author: "MakkaPakka & Final Fixed",
-    description: "去重多集、同步官方隐藏列表、严格按观看时间排序的完美版本。",
-    version: "5.1.0",
+    id: "trakt_continue_oauth_fast",
+    title: "Trakt 继续观看 (OAuth 极速版)",
+    author: "Blue & Optimized",
+    description: "极速加载，OAuth 授权支持电影和真实进度，按最新排序并去重。",
+    version: "1.3.0-fast",
     requiredVersion: "0.0.1",
 
     globalParams: [
@@ -24,13 +30,23 @@ WidgetMetadata = {
 
     modules: [
         {
-            title: "继续观看",
+            title: "我的片单",
             functionName: "loadContinueWatchingOAuth",
             type: "list",
             cacheDuration: 0, // 强制每次 0 缓存实时触发
             params: [
                 { name: "page", title: "页码", type: "page" },
-                { name: "pageSize", title: "每页数量", type: "enumeration", value: "15", enumOptions: [ { title: "10", value: "10" }, { title: "15", value: "15" }, { title: "20", value: "20" } ] }
+                {
+                    name: "pageSize",
+                    title: "每页数量",
+                    type: "enumeration",
+                    value: "15",
+                    enumOptions: [
+                        { title: "10", value: "10" },
+                        { title: "15", value: "15" },
+                        { title: "20", value: "20" }
+                    ]
+                }
             ]
         },
         {
@@ -56,17 +72,27 @@ WidgetMetadata = {
     ]
 };
 
-const TRAKT_API_BASE = "https://api.trakt.tv";
+const TRAKT_BASE = "https://api.trakt.tv";
 const TRAKT_AUTH_BASE = "https://auth.trakt.tv";
 const STORAGE_TOKEN_KEY = "trakt_oauth_token_v6";
 const STORAGE_DEVICE_KEY = "trakt_oauth_device_v6";
 const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
-const tmdbCache = new Map();
-const TMDB_CONCURRENCY = 15;
 
-// ==========================================
-// 1. 核心：极速真实继续观看逻辑
-// ==========================================
+/*
+ * Fast 参数
+ */
+const MAX_WATCHED_FETCH = 100;
+const MAX_DEEP_CHECK = 30; // 适当增加以覆盖更多记录，但仍限制深查数量
+const MAX_CONCURRENCY = 15; // 提高并发以实现极速
+
+const tmdbShowCache = new Map();
+const tmdbSeasonCache = new Map();
+const traktRatingCache = new Map();
+
+// ============================================================
+// 主入口
+// ============================================================
+
 async function loadContinueWatchingOAuth(params = {}) {
     const { oauthClientId, oauthClientSecret, oauthRedirectUri = "urn:ietf:wg:oauth:2.0:oob", page = 1, pageSize = 15 } = params;
     const currentPage = Math.max(1, Number(page) || 1);
@@ -79,97 +105,104 @@ async function loadContinueWatchingOAuth(params = {}) {
     try {
         const accessToken = await ensureOAuthToken(oauthClientId, oauthClientSecret, oauthRedirectUri);
 
-        // 获取暂停的电影、暂停的剧集、看过的历史，【并且】拉取官方的隐藏列表
+        // 并发获取：电影暂停、剧集暂停、剧集观看历史、隐藏列表
+        // 极大减少全量请求的数据量，提高响应速度
         const [playbackMovies, playbackEpisodes, watchedShows, hiddenShows] = await Promise.all([
-            fetchTraktData(`${TRAKT_API_BASE}/sync/playback/movies?extended=full&limit=40`, accessToken, oauthClientId),
-            fetchTraktData(`${TRAKT_API_BASE}/sync/playback/episodes?extended=full&limit=100`, accessToken, oauthClientId),
-            fetchTraktData(`${TRAKT_API_BASE}/sync/watched/shows?extended=progress&limit=100`, accessToken, oauthClientId),
-            fetchTraktData(`${TRAKT_API_BASE}/users/hidden/progress_watched?type=show&limit=100`, accessToken, oauthClientId)
+            fetchTraktData(`${TRAKT_BASE}/sync/playback/movies?extended=full&limit=40`, accessToken, oauthClientId),
+            fetchTraktData(`${TRAKT_BASE}/sync/playback/episodes?extended=full&limit=60`, accessToken, oauthClientId),
+            fetchTraktData(`${TRAKT_BASE}/sync/watched/shows?extended=progress&limit=${MAX_WATCHED_FETCH}`, accessToken, oauthClientId),
+            fetchTraktData(`${TRAKT_BASE}/users/hidden/progress_watched?type=show&limit=100`, accessToken, oauthClientId)
         ]);
 
-        // 解析用户手动在官方隐藏的老剧
-        const hiddenShowIds = new Set();
-        hiddenShows.forEach(h => {
-            if (h.show?.ids?.tmdb) hiddenShowIds.add(h.show.ids.tmdb);
-        });
+        const hiddenShowIds = new Set(hiddenShows.map(h => h.show?.ids?.tmdb).filter(Boolean));
+        let mediaMap = new Map(); // 核心去重字典
 
-        // 核心去重容器：保证一部电影或一部剧只有一个卡片
-        let mediaMap = new Map();
-
-        // 1. 处理暂停的电影
+        // 1. 提取电影暂停记录
         playbackMovies.forEach(item => {
             const p = Number(item?.progress);
-            if (Number.isFinite(p) && p > 0 && p < 100) {
+            if (p > 0 && p < 100) {
                 const tmdbId = item.movie?.ids?.tmdb;
                 if (!tmdbId) return;
                 const key = `movie_${tmdbId}`;
                 const t = safeTime(item.paused_at);
-                // 留存最近暂停的那一个
                 if (!mediaMap.has(key) || mediaMap.get(key)._sortTime < t) {
                     mediaMap.set(key, { ...item, _type: "movie_playback", _sortTime: t });
                 }
             }
         });
 
-        // 2. 处理暂停的剧集（解决同一部剧出好几个的问题）
+        // 2. 提取剧集暂停记录 (单剧去重)
         playbackEpisodes.forEach(item => {
             const p = Number(item?.progress);
-            if (Number.isFinite(p) && p > 0 && p < 100) {
+            if (p > 0 && p < 100) {
                 const tmdbId = item.show?.ids?.tmdb;
-                if (!tmdbId) return;
-                if (hiddenShowIds.has(tmdbId)) return; // 被官方隐藏的，不显示
-
+                if (!tmdbId || hiddenShowIds.has(tmdbId)) return;
                 const key = `show_${tmdbId}`;
                 const t = safeTime(item.paused_at);
-                // 留存最新的一集
                 if (!mediaMap.has(key) || mediaMap.get(key)._sortTime < t) {
                     mediaMap.set(key, { ...item, _type: "show_playback", _sortTime: t });
                 }
             }
         });
 
-        // 3. 处理已看完了的剧集，推算下一集
+        // 3. 提取智能待看 (极速过滤已追平剧集)
         watchedShows.forEach(item => {
             const tmdbId = item.show?.ids?.tmdb;
-            if (!tmdbId) return;
-            if (hiddenShowIds.has(tmdbId)) return; // 被官方隐藏的幽灵老剧，绝对不显示
-
+            if (!tmdbId || hiddenShowIds.has(tmdbId)) return;
             const key = `show_${tmdbId}`;
-            // 如果已经有正在看一半的进度了，就不用再推算了
+            
+            // 如果这部剧正在看一半，就不参与“待看”推算了
             if (mediaMap.has(key)) return; 
 
-            if (countWatchedEpisodes(item) > 0) {
-                const t = safeTime(item.last_watched_at);
-                mediaMap.set(key, { ...item, _type: "show_upnext", _sortTime: t });
+            const watchedCount = countWatchedEpisodes(item);
+            const airedCount = Number(item.show?.aired_episodes || 0);
+            
+            // 性能大杀器：利用 Trakt 原生数据秒级过滤已追平剧集，免去 TMDB 请求
+            if (airedCount > 0 && watchedCount >= airedCount) return; 
+
+            if (watchedCount > 0) {
+                mediaMap.set(key, { ...item, _type: "show_upnext", _sortTime: safeTime(item.last_watched_at) });
             }
         });
 
-        let combinedItems = Array.from(mediaMap.values());
+        // 转为数组并严格按最近操作时间排序，保证最新活跃的在前
+        let combinedItems = Array.from(mediaMap.values()).sort((a, b) => b._sortTime - a._sortTime);
 
-        // 核心修复：坚决按照你【最后的观看/暂停时间】排倒序，绝不用播出时间！杜绝老剧顶上来的情况。
-        combinedItems.sort((a, b) => b._sortTime - a._sortTime);
+        // 深查数量限制
+        const candidates = combinedItems.slice(0, MAX_DEEP_CHECK);
 
-        const start = (currentPage - 1) * limit;
-        const pageItems = combinedItems.slice(start, start + limit);
-
-        const results = await mapWithConcurrency(pageItems, TMDB_CONCURRENCY, async (item) => {
+        // 第一阶段：基础构建
+        const checked = await mapWithConcurrency(candidates, MAX_CONCURRENCY, async item => {
             try {
-                if (item._type === "movie_playback") return await buildMoviePlaybackItem(item);
-                if (item._type === "show_playback") return await buildShowPlaybackItem(item);
-                if (item._type === "show_upnext") return await buildShowUpNextItem(item);
-            } catch (e) { return null; }
+                if (item._type === "movie_playback") return await buildMoviePlaybackItemBase(item);
+                if (item._type === "show_playback") return await buildShowPlaybackItemBase(item);
+                if (item._type === "show_upnext") return await buildShowUpNextItemBase(item);
+            } catch (e) {
+                console.warn("构建条目失败:", e?.message || String(e));
+                return null;
+            }
         });
 
-        const allValidCards = results.filter(Boolean);
+        const available = checked.filter(Boolean);
 
-        if (!allValidCards.length) {
-            return currentPage === 1 ? [{ id: "empty", type: "text", title: "暂无可观看内容", description: "电影已看完，剧集已全部追平。等新集播出后会自动出现！" }] : [];
+        // 分页
+        const start = (currentPage - 1) * limit;
+        const pageItems = available.slice(start, start + limit);
+
+        if (!pageItems.length) {
+            return currentPage === 1 ? [{ id: "empty-progress", type: "text", title: "暂无可继续观看的新集", description: "已追到当前最新集，新集播出后会重新显示" }] : [];
         }
 
-        return allValidCards;
+        // 第二阶段：只给最终显示的卡片补 Trakt Rating
+        const output = await mapWithConcurrency(pageItems, MAX_CONCURRENCY, async data => {
+            try { return await finalizeMediaItem(data); } catch (e) { return data.media; }
+        });
+
+        return output.filter(Boolean);
 
     } catch (e) {
-        return [{ id: "err", type: "text", title: "加载失败", description: String(e?.message || e) }];
+        console.error("加载失败:", e?.message || String(e));
+        return [{ id: "err-load", type: "text", title: "读取 Trakt 失败", description: (e?.message || String(e)) + "\n请稍后重试" }];
     }
 }
 
@@ -183,7 +216,7 @@ async function fetchTraktData(urlBase, accessToken, clientId) {
                 "trakt-api-version": "2",
                 "trakt-api-key": clientId,
                 "Authorization": `Bearer ${accessToken}`,
-                "Cache-Control": "no-cache, no-store, must-revalidate", // 强杀缓存
+                "Cache-Control": "no-cache, no-store, must-revalidate",
                 "Pragma": "no-cache"
             }
         });
@@ -191,149 +224,301 @@ async function fetchTraktData(urlBase, accessToken, clientId) {
     } catch (e) { return []; }
 }
 
-// === 构建电影暂停卡片 ===
-async function buildMoviePlaybackItem(item) {
+// ============================================================
+// 第一阶段：基础构建
+// ============================================================
+
+async function buildMoviePlaybackItemBase(item) {
     const movie = item.movie;
     const tmdbId = Number(movie?.ids?.tmdb || 0) || null;
-    let tmdbData = tmdbId ? await fetchTmdbCache(`/movie/${tmdbId}`) : null;
+    let tmdbData = tmdbId ? await fetchTmdbShow(tmdbId, "movie") : null;
 
-    const progress = normalizeProgress(item.progress);
+    const progress = normalizeRating(item.progress);
     const title = tmdbData?.title || movie.title || "未知电影";
+    const releaseDateStr = tmdbData?.release_date || movie.released || "";
+    const year = String(releaseDateStr).slice(0, 4) || "";
+    const pausedAt = formatDate(item.paused_at);
+
+    const lines = [
+        `🔶 恢复播放 · 电影`,
+        `🔷 播放进度 · ${formatPercent(progress)}%`
+    ];
+    if (pausedAt) lines.push(`上次观看 · ${pausedAt}`);
 
     const media = {
         id: `movie_${tmdbId || movie?.ids?.trakt}`,
         type: "tmdb",
         mediaType: "movie",
         title: title,
-        year: String(tmdbData?.release_date || movie.released || "").slice(0, 4) || "",
-        durationText: `▶ ${progress}%`,
-        genreTitle: "恢复播放",
-        description: `播放进度：${progress}%\n上次观看：${formatHistoryDateTime(item.paused_at)}`,
-        link: tmdbId ? buildTraktResumeLink({ mediaType: "movie", tmdbId: tmdbId, progress: progress }) : ""
+        year: year,
+        description: lines.join("\n"),
+        currentSeason: 0,
+        currentEpisode: 0,
+        currentEpisodeName: "电影"
     };
+
+    const tmdbRating = normalizeRating(tmdbData?.vote_average);
+    if (tmdbRating > 0) media.rating = tmdbRating;
     if (tmdbId) media.tmdbId = tmdbId;
     if (tmdbData?.poster_path) media.posterPath = TMDB_IMG + tmdbData.poster_path;
-    return media;
+
+    return { media: media, show: movie, tmdbRating: tmdbRating, type: "movie" };
 }
 
-// === 构建剧集暂停卡片（真正显示百分比的地方）===
-async function buildShowPlaybackItem(item) {
+async function buildShowPlaybackItemBase(item) {
     const show = item.show;
     const ep = item.episode;
     const tmdbId = Number(show?.ids?.tmdb || 0) || null;
-    let tmdbShow = tmdbId ? await fetchTmdbCache(`/tv/${tmdbId}`) : null;
+    let tmdbShow = tmdbId ? await fetchTmdbShow(tmdbId, "tv") : null;
 
-    const progress = normalizeProgress(item.progress);
+    const progress = normalizeRating(item.progress);
     const season = Number(ep.season || 0);
     const episode = Number(ep.number || 0);
     const title = tmdbShow?.name || tmdbShow?.original_name || show.title || "未知剧集";
     const se = `S${pad2(season)}E${pad2(episode)}`;
-    const episodeTitle = ep.title || `第 ${episode} 集`;
+    const episodeTitle = `第${episode}集`;
+    const pausedAt = formatDate(item.paused_at);
+
+    const lines = [
+        `🔶 恢复播放 · ${se} · ${episodeTitle}`,
+        `🔷 播放进度 · ${formatPercent(progress)}%`
+    ];
+    if (pausedAt) lines.push(`上次观看 · ${pausedAt}`);
 
     const media = {
         id: `tv_play_${tmdbId || show?.ids?.trakt}`,
         type: "tmdb",
         mediaType: "tv",
         title: `${title} · ${se}`,
-        year: String(ep.first_aired || tmdbShow?.first_air_date || show.first_aired || "").slice(0, 4) || "",
-        durationText: `▶ ${progress}%`,
-        genreTitle: "恢复播放",
-        description: `恢复播放 · ${episodeTitle}\n播放进度：${progress}%\n上次观看：${formatHistoryDateTime(item.paused_at)}`,
-        
-        // 绝对保留原生跳转参数
+        year: String(ep.first_aired || tmdbShow?.first_air_date || "").slice(0, 4) || "",
+        description: lines.join("\n"),
         currentSeason: season,
         currentEpisode: episode,
-        currentEpisodeName: episodeTitle,
-        link: tmdbId ? buildTraktResumeLink({ mediaType: "tv", tmdbId: tmdbId, season: season, episode: episode, progress: progress }) : ""
+        currentEpisodeName: episodeTitle
     };
+
+    const tmdbRating = normalizeRating(tmdbShow?.vote_average);
+    if (tmdbRating > 0) media.rating = tmdbRating;
     if (tmdbId) media.tmdbId = tmdbId;
     if (tmdbShow?.poster_path) media.posterPath = TMDB_IMG + tmdbShow.poster_path;
-    return media;
+
+    return { media: media, show: show, tmdbRating: tmdbRating, type: "show" };
 }
 
-// === 构建待看新集卡片 (V3 智能推算) ===
-async function buildShowUpNextItem(item) {
-    const show = item.show || {};
+async function buildShowUpNextItemBase(item) {
+    const show = item?.show || {};
     const tmdbId = Number(show?.ids?.tmdb || 0) || null;
     const last = getLastWatchedEpisode(item);
     if (!last) return null;
 
-    const tmdbShow = tmdbId ? await fetchTmdbCache(`/tv/${tmdbId}`) : null;
+    const watchedCount = countWatchedEpisodes(item);
+    let tmdbShow = null;
+    let tmdbFailed = false;
+
+    if (tmdbId) {
+        try { tmdbShow = await fetchTmdbShow(tmdbId, "tv"); } catch (e) { tmdbFailed = true; }
+    }
+
     const aired = getAiredEpisodeCount(show, tmdbShow);
-    const next = await inferNextEpisode(last, tmdbId, tmdbShow, show, aired);
+    const result = await inferNextEpisode(last, tmdbId, tmdbShow, show, aired, tmdbFailed);
 
-    if (!next) return null; // 追平自动隐藏
+    if (result.status === "none" || result.status === "lookup_failed") return null;
 
+    const next = result.next;
     const title = tmdbShow?.name || tmdbShow?.original_name || show.title || "未知剧集";
-    const targetSeason = next.season;
-    const targetEpisode = next.episode;
-    const airDateStr = next.air_date || tmdbShow?.first_air_date || show.first_aired || "";
+    const year = String(show.year || String(tmdbShow?.first_air_date || "").slice(0, 4) || "");
+    const targetSeason = Number(next.season || 0);
+    const targetEpisode = Number(next.episode || 0);
     const se = `S${pad2(targetSeason)}E${pad2(targetEpisode)}`;
-    const episodeTitle = next.title || `第 ${targetEpisode} 集`;
+    const episodeTitle = `第${targetEpisode}集`;
+
+    const pct = aired > 0 ? Math.min(100, Math.max(0, watchedCount / aired * 100)) : 0;
+    const progressText = aired > 0 ? `${formatPercent(pct)}%（${watchedCount}/${aired} 集）` : `${watchedCount} 集`;
+    const lastWatchedDate = formatDate(item?.last_watched_at);
+
+    const lines = [
+        `🔶 继续观看 · ${se} · ${episodeTitle}`,
+        `🔷 观看进度 · ${progressText}`
+    ];
+    if (lastWatchedDate) lines.push(`上次观看 · ${lastWatchedDate}`);
 
     const media = {
-        id: `tv_next_${tmdbId || show?.ids?.trakt}`,
+        id: String(tmdbId || show?.ids?.trakt || title),
         type: "tmdb",
         mediaType: "tv",
         title: `${title} · ${se}`,
-        year: String(airDateStr).slice(0, 4) || "",
-        releaseDate: airDateStr,
-        durationText: "待看新集",
-        genreTitle: "待看新集",
-        description: `待看新集 · ${episodeTitle}\n播出时间：${airDateStr ? airDateStr : '未知'}\n上次观看：${formatDate(item.last_watched_at)}`,
+        year: year,
+        description: lines.join("\n"),
         currentSeason: targetSeason,
         currentEpisode: targetEpisode,
-        currentEpisodeName: episodeTitle,
-        link: tmdbId ? buildTraktResumeLink({ mediaType: "tv", tmdbId: tmdbId, season: targetSeason, episode: targetEpisode }) : ""
+        currentEpisodeName: episodeTitle
     };
+
+    const tmdbRating = normalizeRating(tmdbShow?.vote_average);
+    if (tmdbRating > 0) media.rating = tmdbRating;
     if (tmdbId) media.tmdbId = tmdbId;
     if (tmdbShow?.poster_path) media.posterPath = TMDB_IMG + tmdbShow.poster_path;
+
+    return { media: media, show: show, tmdbRating: tmdbRating, type: "show" };
+}
+
+// ============================================================
+// 第二阶段：补 Trakt Rating
+// ============================================================
+
+async function finalizeMediaItem(data) {
+    const media = data?.media;
+    if (!media) return null;
+    const showOrMovie = data?.show || {};
+
+    const traktRating = await fetchTraktRating(showOrMovie, data.type);
+    if (traktRating > 0) media.rating = traktRating;
+
     return media;
 }
 
-// ==========================================
-// 推算与辅助计算
-// ==========================================
-async function inferNextEpisode(last, tmdbId, tmdbShow, show, aired) {
-    if (!last) return null;
+// ============================================================
+// 下一集判断
+// ============================================================
+
+async function inferNextEpisode(last, tmdbId, tmdbShow, show, aired, showLookupFailed = false) {
+    if (!last) return { status: "none" };
+
     const traktAired = Number(aired || show?.aired_episodes || 0);
 
-    if (!tmdbId) {
-        if (last.season === 1 && traktAired > last.episode) return { season: last.season, episode: last.episode + 1, title: "", air_date: "" };
-        return null;
-    }
-    try {
-        const seasonData = await fetchTmdbSeason(tmdbId, last.season);
-        const eps = Array.isArray(seasonData?.episodes) ? seasonData.episodes : [];
-        
-        const nextInSameSeason = eps.find(ep => Number(ep?.episode_number) === last.episode + 1 && hasAired(ep?.air_date));
-        if (nextInSameSeason) return { season: last.season, episode: Number(nextInSameSeason.episode_number), title: nextInSameSeason.name || "", air_date: nextInSameSeason.air_date };
-
-        const lastEpisodeToAir = tmdbShow?.last_episode_to_air;
-        if (lastEpisodeToAir && Number(lastEpisodeToAir.season_number) === last.season && Number(lastEpisodeToAir.episode_number) >= last.episode + 1) {
-            const matched = eps.find(ep => Number(ep?.episode_number) === last.episode + 1);
-            return { season: last.season, episode: last.episode + 1, title: matched?.name || "", air_date: matched?.air_date || "" };
-        }
-
+    if (!tmdbId || showLookupFailed) {
         if (last.season === 1 && traktAired > last.episode) {
-            const matched = eps.find(ep => Number(ep?.episode_number) === last.episode + 1);
-            return { season: last.season, episode: last.episode + 1, title: matched?.name || "", air_date: matched?.air_date || "" };
+            return { status: "next", next: { season: last.season, episode: last.episode + 1 } };
         }
+        return { status: "lookup_failed" };
+    }
 
-        const nextSeasonNo = last.season + 1;
-        const hasNextSeason = Array.isArray(tmdbShow?.seasons) && tmdbShow.seasons.some(s => Number(s?.season_number) === nextSeasonNo && Number(s?.episode_count || 0) > 0);
-        if (!hasNextSeason) return null;
-
-        const nextSeason = await fetchTmdbSeason(tmdbId, nextSeasonNo);
-        const ep1 = Array.isArray(nextSeason?.episodes) ? nextSeason.episodes.find(ep => Number(ep?.episode_number) === 1 && hasAired(ep?.air_date)) : null;
-        if (!ep1) return null;
-
-        return { season: nextSeasonNo, episode: 1, title: ep1.name || "", air_date: ep1.air_date || "" };
+    let seasonData;
+    try {
+        seasonData = await fetchTmdbSeason(tmdbId, last.season);
     } catch (e) {
-        if (last.season === 1 && traktAired > last.episode) return { season: last.season, episode: last.episode + 1, title: "", air_date: "" };
-        return null;
+        if (last.season === 1 && traktAired > last.episode) {
+            return { status: "next", next: { season: last.season, episode: last.episode + 1 } };
+        }
+        return { status: "lookup_failed" };
+    }
+
+    const episodes = Array.isArray(seasonData?.episodes) ? seasonData.episodes : [];
+    const nextEpisode = episodes.find(ep => Number(ep?.episode_number) === last.episode + 1 && hasAired(ep?.air_date));
+
+    if (nextEpisode) {
+        return { status: "next", next: { season: last.season, episode: Number(nextEpisode.episode_number) } };
+    }
+
+    const lastEpisodeToAir = tmdbShow?.last_episode_to_air;
+    if (lastEpisodeToAir && Number(lastEpisodeToAir.season_number) === last.season && Number(lastEpisodeToAir.episode_number) >= last.episode + 1) {
+        return { status: "next", next: { season: last.season, episode: last.episode + 1 } };
+    }
+
+    if (last.season === 1 && traktAired > last.episode) {
+        return { status: "next", next: { season: last.season, episode: last.episode + 1 } };
+    }
+
+    const nextSeasonNo = last.season + 1;
+    const hasNextSeason = Array.isArray(tmdbShow?.seasons) && tmdbShow.seasons.some(season => Number(season?.season_number) === nextSeasonNo && Number(season?.episode_count || 0) > 0);
+
+    if (!hasNextSeason) return { status: "none" };
+
+    let nextSeason;
+    try {
+        nextSeason = await fetchTmdbSeason(tmdbId, nextSeasonNo);
+    } catch (e) {
+        return { status: "lookup_failed" };
+    }
+
+    const episode1 = Array.isArray(nextSeason?.episodes) ? nextSeason.episodes.find(ep => Number(ep?.episode_number) === 1 && hasAired(ep?.air_date)) : null;
+
+    if (!episode1) return { status: "none" };
+
+    return { status: "next", next: { season: nextSeasonNo, episode: 1 } };
+}
+
+// ============================================================
+// Trakt Rating
+// ============================================================
+
+async function fetchTraktRating(showOrMovie, type) {
+    const lookupId = showOrMovie?.ids?.slug || showOrMovie?.ids?.trakt;
+    if (!lookupId) return 0;
+    
+    const key = `${type}_${lookupId}`;
+    if (traktRatingCache.has(key)) return await traktRatingCache.get(key);
+
+    const promise = fetchTraktRatingInternal(lookupId, type);
+    traktRatingCache.set(key, promise);
+
+    try {
+        const rating = await promise;
+        traktRatingCache.set(key, rating);
+        return rating;
+    } catch (e) {
+        traktRatingCache.delete(key);
+        return 0;
     }
 }
+
+async function fetchTraktRatingInternal(lookupId, type) {
+    const endpoint = type === "movie" ? "movies" : "shows";
+    const url = `${TRAKT_BASE}/${endpoint}/${encodeURIComponent(lookupId)}/ratings`;
+
+    const res = await Widget.http.get(url, {
+        headers: { "Content-Type": "application/json", "trakt-api-version": "2", "trakt-api-key": INTERNAL_CLIENT_ID }
+    });
+
+    if (!res || res.ok === false) return 0;
+    let data = (res?.data !== undefined) ? res.data : res;
+    if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch (e) { return 0; }
+    }
+    return normalizeRating(data?.rating);
+}
+
+// ============================================================
+// TMDB
+// ============================================================
+
+async function fetchTmdbShow(tmdbId, type = "tv") {
+    const key = `${type}_${tmdbId}`;
+    if (tmdbShowCache.has(key)) return await tmdbShowCache.get(key);
+
+    const promise = Widget.tmdb.get(`/${type}/${tmdbId}`, { params: { language: "zh-CN" } });
+    tmdbShowCache.set(key, promise);
+
+    try {
+        const data = await promise;
+        tmdbShowCache.set(key, data || null);
+        return data || null;
+    } catch (e) {
+        tmdbShowCache.delete(key);
+        throw e;
+    }
+}
+
+async function fetchTmdbSeason(tmdbId, seasonNo) {
+    const key = `${tmdbId}:${seasonNo}`;
+    if (tmdbSeasonCache.has(key)) return await tmdbSeasonCache.get(key);
+
+    const promise = Widget.tmdb.get(`/tv/${tmdbId}/season/${seasonNo}`, { params: { language: "zh-CN" } });
+    tmdbSeasonCache.set(key, promise);
+
+    try {
+        const data = await promise;
+        tmdbSeasonCache.set(key, data || null);
+        return data || null;
+    } catch (e) {
+        tmdbSeasonCache.delete(key);
+        throw e;
+    }
+}
+
+// ============================================================
+// 辅助计算
+// ============================================================
 
 function countWatchedEpisodes(item) {
     let count = 0;
@@ -350,14 +535,16 @@ function getLastWatchedEpisode(item) {
     const seasons = Array.isArray(item?.seasons) ? item.seasons : [];
     let best = null;
     for (const season of seasons) {
-        const s = Number(season?.number || 0);
-        if (s <= 0) continue;
+        const seasonNo = Number(season?.number || 0);
+        if (seasonNo <= 0) continue;
         const episodes = Array.isArray(season?.episodes) ? season.episodes : [];
         for (const ep of episodes) {
             if (Number(ep?.plays || 0) <= 0) continue;
-            const e = Number(ep?.number || 0);
-            if (e <= 0) continue;
-            if (!best || s > best.season || (s === best.season && e > best.episode)) { best = { season: s, episode: e }; }
+            const episodeNo = Number(ep?.number || 0);
+            if (episodeNo <= 0) continue;
+            if (!best || seasonNo > best.season || (seasonNo === best.season && episodeNo > best.episode)) {
+                best = { season: seasonNo, episode: episodeNo };
+            }
         }
     }
     return best;
@@ -366,99 +553,14 @@ function getLastWatchedEpisode(item) {
 function getAiredEpisodeCount(show, tmdbShow) {
     const traktAired = Number(show?.aired_episodes || 0);
     if (traktAired > 0) return traktAired;
-    const tmdbTotal = Number(tmdbShow?.number_of_episodes || 0);
-    return tmdbTotal > 0 ? tmdbTotal : 0;
+    return Number(tmdbShow?.number_of_episodes || 0);
 }
+
 function hasAired(dateStr) {
     if (!dateStr) return false;
-    const d = new Date(String(dateStr) + "T00:00:00Z");
-    if (isNaN(d.getTime())) return false;
-    return d.getTime() <= Date.now();
-}
-
-// ==========================================
-// 原作者完美详情接口魔法
-// ==========================================
-function buildTraktResumeLink({ mediaType, tmdbId, season = 0, episode = 0, progress = 0 }) {
-    return ["traktresume", String(mediaType || ""), String(tmdbId || ""), String(season || 0), String(episode || 0), String(progress || 0)].join("|");
-}
-
-function parseTraktResumeLink(link) {
-    if (!link || typeof link !== "string") return null;
-    const parts = link.split("|");
-    if (parts.length < 6 || parts[0] !== "traktresume") return null;
-    return { mediaType: parts[1], tmdbId: Number(parts[2] || 0), season: Number(parts[3] || 0), episode: Number(parts[4] || 0), progress: Number(parts[5] || 0) };
-}
-
-async function loadDetail(link) {
-    const ctx = parseTraktResumeLink(link);
-    if (!ctx || !ctx.tmdbId) return null;
-    if (ctx.mediaType === "movie") return await loadTraktResumeMovieDetail(ctx, link);
-    if (ctx.mediaType === "tv") return await loadTraktResumeTvDetail(ctx, link);
-    return null;
-}
-
-async function loadTraktResumeMovieDetail(ctx, link) {
-    try {
-        const d = await fetchTmdbCache(`/movie/${ctx.tmdbId}`);
-        return {
-            id: `movie.${d.id}`, tmdbId: d.id, type: "tmdb", mediaType: "movie", link: link,
-            title: d.title || "未知电影", posterPath: d.poster_path || "", backdropPath: d.backdrop_path || "",
-            durationText: ctx.progress > 0 ? `恢复播放 ${normalizeProgress(ctx.progress)}%` : "",
-            description: `Trakt 实际播放进度：${normalizeProgress(ctx.progress)}%\n${d.overview || "暂无简介"}`
-        };
-    } catch (e) { return null; }
-}
-
-async function loadTraktResumeTvDetail(ctx, link) {
-    try {
-        const [show, seasonDetail] = await Promise.all([
-            fetchTmdbCache(`/tv/${ctx.tmdbId}`),
-            Widget.tmdb.get(`/tv/${ctx.tmdbId}/season/${ctx.season}`, { params: { language: "zh-CN" } })
-        ]);
-
-        const rawEpisodes = Array.isArray(seasonDetail?.episodes) ? seasonDetail.episodes : [];
-        const orderedEpisodes = [
-            ...rawEpisodes.filter(ep => Number(ep.episode_number) === Number(ctx.episode)),
-            ...rawEpisodes.filter(ep => Number(ep.episode_number) !== Number(ctx.episode))
-        ];
-
-        const episodeItems = orderedEpisodes.map(ep => {
-            const epNo = Number(ep.episode_number || 0);
-            const isTarget = epNo === Number(ctx.episode);
-            return {
-                id: `tv.${show.id}`, tmdbId: show.id, type: "tmdb", mediaType: "tv", season: Number(ctx.season), episode: epNo,
-                title: `E${epNo}. ${ep.name || `第 ${epNo} 集`}`, duration: Number(ep.runtime || 0),
-                durationText: isTarget ? `▶ 继续 ${normalizeProgress(ctx.progress)}%` : "",
-                link: buildTraktResumeLink({ mediaType: "tv", tmdbId: show.id, season: Number(ctx.season), episode: epNo, progress: isTarget ? ctx.progress : 0 }),
-                backdropPath: ep.still_path || show.backdrop_path || "", posterPath: show.poster_path || ""
-            };
-        });
-
-        return {
-            id: `tv.${show.id}`, tmdbId: show.id, type: "tmdb", mediaType: "tv", link: link,
-            season: Number(ctx.season), episode: Number(ctx.episode),
-            title: show.name || "未知剧集", posterPath: show.poster_path || "", backdropPath: show.backdrop_path || "",
-            durationText: `▶ ${normalizeProgress(ctx.progress)}%`,
-            description: `Trakt 实际播放进度：${normalizeProgress(ctx.progress)}%\n${show.overview || ""}`,
-            episodeItems: episodeItems
-        };
-    } catch (e) { return null; }
-}
-
-// ==========================================
-// 并发工具与 TMDB 缓存
-// ==========================================
-const tmdbSeasonCache = new Map();
-async function fetchTmdbSeason(tmdbId, seasonNo) {
-    const key = `${tmdbId}:${seasonNo}`;
-    if (tmdbSeasonCache.has(key)) return tmdbSeasonCache.get(key);
-    try {
-        const promise = Widget.tmdb.get(`/tv/${tmdbId}/season/${seasonNo}`, { params: { language: "zh-CN" } });
-        tmdbSeasonCache.set(key, promise);
-        const data = await promise;
-        return data || null;
-    } catch (e) { return null; }
+    const date = new Date(String(dateStr) + "T00:00:00Z");
+    if (isNaN(date.getTime())) return false;
+    return date.getTime() <= Date.now();
 }
 
 async function mapWithConcurrency(items, concurrency, worker) {
@@ -467,6 +569,7 @@ async function mapWithConcurrency(items, concurrency, worker) {
     const results = new Array(list.length);
     let cursor = 0;
     const runnerCount = Math.min(Math.max(1, concurrency || 1), list.length);
+
     const runners = new Array(runnerCount).fill(0).map(async () => {
         while (true) {
             const index = cursor++;
@@ -474,33 +577,37 @@ async function mapWithConcurrency(items, concurrency, worker) {
             try { results[index] = await worker(list[index], index); } catch (e) { results[index] = null; }
         }
     });
+
     await Promise.all(runners);
     return results;
 }
 
-async function fetchTmdbCache(path) {
-    if (tmdbCache.has(path)) return tmdbCache.get(path);
-    try {
-        const promise = Widget.tmdb.get(path, { params: { language: "zh-CN" } });
-        tmdbCache.set(path, promise);
-        const data = await promise;
-        return data || null;
-    } catch (e) { return null; }
+function normalizeRating(value) {
+    const n = Number(value || 0);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.round(n * 10) / 10;
 }
 
-function normalizeProgress(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "0";
-    return Number.isInteger(Math.round(n * 10) / 10) ? String((Math.round(n * 10) / 10).toFixed(0)) : String((Math.round(n * 10) / 10).toFixed(1));
+function safeTime(value) {
+    const t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
 }
-function pad2(n) { return Number(n) < 10 ? "0" + n : String(n); }
-function safeTime(value) { const t = new Date(value || 0).getTime(); return isNaN(t) ? 0 : t; }
-function formatDate(value) { if (!value) return ""; const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/); return match ? match[1] : ""; }
-function formatHistoryDateTime(value) {
-    if (!value) return "未知时间";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return String(value);
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+function formatDate(value) {
+    if (!value) return "";
+    const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : "";
+}
+
+function pad2(value) {
+    const n = Number(value || 0);
+    return n < 10 ? "0" + n : String(n);
+}
+
+function formatPercent(value) {
+    const n = Number(value || 0);
+    const one = Math.round(n * 10) / 10;
+    return Number.isInteger(one) ? String(one) : one.toFixed(1);
 }
 
 // ==========================================
@@ -518,7 +625,7 @@ async function manageTraktOAuth(params = {}) {
 
     if (oauthAction === "start") {
         try {
-            const res = await Widget.http.post(`${TRAKT_API_BASE}/oauth/device/code`, { client_id: oauthClientId }, { headers: { "Content-Type": "application/json" }});
+            const res = await Widget.http.post(`${TRAKT_AUTH_BASE}/oauth/device/code`, { client_id: oauthClientId }, { headers: { "Content-Type": "application/json" }});
             Widget.storage.set(STORAGE_DEVICE_KEY, JSON.stringify(res.data));
             return [{ id: "code", type: "text", title: `登录码：${res.data.user_code}`, description: `1. 手机打开网址: https://trakt.tv/activate\n2. 输入上方登录码\n3. 返回此处点击"2️⃣ 检查授权"` }];
         } catch(e) { return [{ id: "err", type: "text", title: "获取登录码失败" }]; }
@@ -528,7 +635,7 @@ async function manageTraktOAuth(params = {}) {
         const device = JSON.parse(Widget.storage.get(STORAGE_DEVICE_KEY) || "{}");
         if (!device.device_code) return [{ id: "err", type: "text", title: "请先生成登录码" }];
         try {
-            const res = await Widget.http.post(`${TRAKT_API_BASE}/oauth/device/token`, { code: device.device_code, client_id: oauthClientId, client_secret: oauthClientSecret }, { headers: { "Content-Type": "application/json" }});
+            const res = await Widget.http.post(`${TRAKT_AUTH_BASE}/oauth/device/token`, { code: device.device_code, client_id: oauthClientId, client_secret: oauthClientSecret }, { headers: { "Content-Type": "application/json" }});
             Widget.storage.set(STORAGE_TOKEN_KEY, JSON.stringify({...res.data, created_at: Math.floor(Date.now() / 1000)}));
             Widget.storage.remove(STORAGE_DEVICE_KEY);
             return [{ id: "ok", type: "text", title: "登录成功！", description: "现在可以去打开「继续观看」了" }];
@@ -536,7 +643,7 @@ async function manageTraktOAuth(params = {}) {
     }
     
     const token = JSON.parse(Widget.storage.get(STORAGE_TOKEN_KEY) || "{}");
-    if(token.access_token) return [{ id: "ok", type: "text", title: "Trakt 已登录", description: "已经完美去重并同步官方隐藏列表！" }];
+    if(token.access_token) return [{ id: "ok", type: "text", title: "Trakt 已登录", description: "享受无残留的极速完美列表吧！" }];
     return [{ id: "no", type: "text", title: "未登录", description: "请选择 1️⃣ 开始生成登录码" }];
 }
 
