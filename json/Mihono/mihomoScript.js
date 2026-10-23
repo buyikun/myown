@@ -104,6 +104,26 @@ const blockForeignQuic = [
   'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_additional),(RULE-SET,cn_ip,no-resolve)))))),REJECT',
 ];
 
+// Cloudflare 官方 IPv4 段直连（来源：https://www.cloudflare.com/ips-v4）
+// 供 CFST 等优选工具直连测速；全部带 no-resolve，浏览器访问 CF 站点仍按域名规则走代理
+const cloudflareDirectRules = [
+  'IP-CIDR,173.245.48.0/20,直连,no-resolve',
+  'IP-CIDR,103.21.244.0/22,直连,no-resolve',
+  'IP-CIDR,103.22.200.0/22,直连,no-resolve',
+  'IP-CIDR,103.31.4.0/22,直连,no-resolve',
+  'IP-CIDR,141.101.64.0/18,直连,no-resolve',
+  'IP-CIDR,108.162.192.0/18,直连,no-resolve',
+  'IP-CIDR,190.93.240.0/20,直连,no-resolve',
+  'IP-CIDR,188.114.96.0/20,直连,no-resolve',
+  'IP-CIDR,197.234.240.0/22,直连,no-resolve',
+  'IP-CIDR,198.41.128.0/17,直连,no-resolve',
+  'IP-CIDR,162.158.0.0/15,直连,no-resolve',
+  'IP-CIDR,104.16.0.0/13,直连,no-resolve',
+  'IP-CIDR,104.24.0.0/14,直连,no-resolve',
+  'IP-CIDR,172.64.0.0/13,直连,no-resolve',
+  'IP-CIDR,131.0.72.0/22,直连,no-resolve',
+];
+
 // 直连节点
 const directProxies = [
   {
@@ -1641,6 +1661,8 @@ function main(config) {
     ...functionalRules,
 
     // 兜底规则
+    // Cloudflare 官方 IPv4 段直连（CFST 优选测速），放在 geolocation-!cn 之前
+    ...cloudflareDirectRules,
     'RULE-SET,geolocation-!cn,默认代理',
     'RULE-SET,cn_ip,直连',
     'RULE-SET,private_ip,直连',
