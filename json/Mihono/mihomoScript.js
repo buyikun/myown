@@ -79,13 +79,20 @@ const prefixRules = [
  false = 禁用 */
 const enableCustomRules = true;
 
-// 未标注策略时使用的默认策略，目标策略组不存在时回退「默认代理」
+// 未标注策略时使用的默认策略
+// airport（机场订阅）：需要代理 → 自动选择
+// direct（直连域名）：直连
+// outdoor（境外流媒体/Plex/Emby）：需要代理 → 自动选择
+// unsure（不确定归属）：走 Emby 分组
 const customRuleDefaultPolicies = {
-  airport: '默认代理',
+  airport: '自动选择',
   direct: '直连',
-  outdoor: '默认代理',
-  unsure: '默认代理',
+  outdoor: '自动选择',
+  unsure: 'Emby',
 };
+
+// 目标策略组未生成时的回退顺序
+const customRuleFallbackPolicies = ['自动选择', '默认代理'];
 
 // Loon 策略名 → mihomo 策略组名
 const customRulePolicyAlias = {
@@ -376,8 +383,15 @@ function buildCustomRules(availablePolicies) {
     const builtin = customRuleBuiltinPolicies[String(policy).toUpperCase()];
     if (builtin) return builtin;
 
+    // Loon 策略名别名映射（全球加速 / 美国节点 / 新加坡节点）
     const mapped = customRulePolicyAlias[policy] || policy;
-    return availablePolicies.has(mapped) ? mapped : '默认代理';
+    if (availablePolicies.has(mapped)) return mapped;
+
+    // 目标策略组未生成时，按回退链取第一个可用的组
+    for (const fallback of customRuleFallbackPolicies) {
+      if (availablePolicies.has(fallback)) return fallback;
+    }
+    return '默认代理';
   };
 
   const sources = [
@@ -1383,7 +1397,10 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
   const baseGroupNames = baseGroups.filter((g) => ruleOptionsEnable[g.name]).map((g) => g.name);
   const customGroupNames = customGroup ? [customGroup.name] : [];
 
-  // 自定义规则可引用的策略组：固定组 + 已启用基组 + 地区组 + 自建节点组
+  // 自定义规则可引用的策略组：固定组 + 已启用基组 + 地区组 + 自建节点组 + 已启用的服务组
+  const serviceGroupNames = serviceConfigs
+    .filter((svc) => ruleOptionsEnable[svc.name])
+    .map((svc) => svc.name);
   const availablePolicies = new Set([
     '默认代理',
     '漏网之鱼',
@@ -1391,6 +1408,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
     ...baseGroupNames,
     ...groupNamesOfSelect,
     ...customGroupNames,
+    ...serviceGroupNames,
   ]);
   const customRules = buildCustomRules(availablePolicies);
 
