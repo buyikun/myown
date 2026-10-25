@@ -1,0 +1,47 @@
+name: Sync Loon rules to mihomo
+
+on:
+  push:
+    paths:
+      - 'Rule/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 同步规则到 mihomoScript.js
+        run: node .github/scripts/sync_rules.mjs
+
+      - name: 校验脚本语法
+        run: node --check json/Mihono/mihomoScript.js
+
+      - name: 提交并推送
+        run: |
+          if git diff --quiet -- json/Mihono/mihomoScript.js; then
+            echo "规则无变化，跳过提交。"
+            echo "### 规则无变化" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add json/Mihono/mihomoScript.js
+          git commit -m "chore(rules): 自动同步 Rule/ 规则到 mihomoScript.js"
+
+          echo "### 已同步" >> "$GITHUB_STEP_SUMMARY"
+          git diff --stat HEAD~1 -- json/Mihono/mihomoScript.js >> "$GITHUB_STEP_SUMMARY"
+
+          git push origin HEAD:main
