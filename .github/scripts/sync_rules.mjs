@@ -47,7 +47,10 @@ function readRuleFile(file) {
   return text;
 }
 
-let source = fs.readFileSync(target, 'utf8');
+// 保持目标文件原有的换行风格（Windows 检出的 CRLF 不会被脚本改成 LF）
+const rawSource = fs.readFileSync(target, 'utf8');
+const usesCRLF = rawSource.includes('\r\n');
+const source = rawSource.replace(/\r\n/g, '\n');
 let next = source;
 const updated = [];
 
@@ -74,7 +77,18 @@ if (next === source) {
   for (const item of updated) console.error(`  - ${item}`);
   process.exit(1);
 } else {
-  fs.writeFileSync(target, next);
+  fs.writeFileSync(target, usesCRLF ? next.replace(/\n/g, '\r\n') : next);
   console.log('已同步以下规则：');
   for (const item of updated) console.log(`  - ${item}`);
+}
+
+// 提示：Rule/ 下新增了未配置的文件时提醒，避免规则被静默忽略
+const knownFiles = new Set(SOURCES.map((item) => item.file));
+const extraFiles = fs
+  .readdirSync(path.join(root, 'Rule'))
+  .filter((name) => !knownFiles.has(name) && !name.startsWith('.'));
+
+if (extraFiles.length > 0) {
+  console.warn(`\n提示：Rule/ 下这些文件尚未纳入同步，如需整合请在 SOURCES 中补充：`);
+  for (const name of extraFiles) console.warn(`  - Rule/${name}`);
 }
