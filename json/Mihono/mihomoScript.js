@@ -69,6 +69,338 @@ const prefixRules = [
   'DOMAIN,international-gfe.download.nvidia.com,直连',
 ];
 
+// --- 自定义规则区（整合 Rule/ 目录下的 Loon 规则） ---
+// 规则来源：https://github.com/buyikun/myown/tree/main/Rule
+// 汇总时按「先出现的策略优先」去重，可直接在此增删
+
+/**
+ 是否启用自定义规则
+ true = 启用
+ false = 禁用 */
+const enableCustomRules = true;
+
+// 未标注策略时使用的默认策略，目标策略组不存在时回退「默认代理」
+const customRuleDefaultPolicies = {
+  airport: '默认代理',
+  direct: '直连',
+  outdoor: '默认代理',
+  unsure: '默认代理',
+};
+
+// Loon 策略名 → mihomo 策略组名
+const customRulePolicyAlias = {
+  全球加速: '自动选择',
+  美国节点: '美国',
+  新加坡节点: '新加坡',
+};
+
+// Loon 内建策略 → mihomo 内建策略
+const customRuleBuiltinPolicies = {
+  DIRECT: '直连',
+  REJECT: 'REJECT',
+  'REJECT-DROP': 'REJECT-DROP',
+  PASS: 'PASS',
+};
+
+// 支持的规则类型
+const customRuleTypes = ['DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD'];
+
+// Rule/airport：机场订阅与官网域名
+const customRuleSourceAirport = `
+#宝可梦
+DOMAIN-KEYWORD,52pokemon
+#glados
+DOMAIN,update.glados-config.com
+#aca
+DOMAIN,api.aca.best
+#error
+DOMAIN,network-proxy.erroris.best
+#锦瑜小窝
+DOMAIN-KEYWORD,jinyuxiaowo
+#cac
+DOMAIN,www.cacapex.com
+#free
+DOMAIN,proc.xn--l9qyaz082a.cn
+#apop
+DOMAIN-KEYWORD,apopemby
+#公益网络
+DOMAIN,gy888.xyz
+#高中生
+DOMAIN,302verify.com
+DOMAIN-KEYWORD,ytools
+#ikuuu
+DOMAIN,api.sub-100.one
+#包含sub
+DOMAIN,sub.xn--mes91t7ofgnw.com
+#华夏
+DOMAIN,wwn.trx1.cyou
+DOMAIN,huaxia.tyreo.cn
+#oi
+DOMAIN-KEYWORD,oiyun
+#claw-substore
+#DOMAIN,udrlkbsihdtq.ap-northeast-1.clawcloudrun.com
+`;
+
+// Rule/direct：直连域名
+const customRuleSourceDirect = `
+#中兴路由器
+DOMAIN,zte.home
+#hxd
+DOMAIN,cf.bili.rip
+DOMAIN,hxd.as174.de
+#1111
+DOMAIN,cf.xmsl.org
+#IrisEmby
+DOMAIN-SUFFIX,irisyyds.top
+DOMAIN-SUFFIX,iris520.vip
+#二楼
+DOMAIN-SUFFIX,cmecloud.cn,DIRECT
+DOMAIN-SUFFIX,guangyacdn.com,DIRECT
+# misty
+#emos
+DOMAIN,video.emos.best
+DOMAIN,clun.top
+#月饼
+DOMAIN-SUFFIX,emby.my
+#通用反代线路
+DOMAIN,emby.buyikun.dpdns.org,DIRECT
+DOMAIN,auto.liuer.indevs.in,DIRECT
+DOMAIN,auto.dolby.dpdns.org,DIRECT
+DOMAIN,emby.noomi.eu.cc,DIRECT
+DOMAIN,fd.dirige.de5.net,DIRECT
+DOMAIN,auto.embys.dpdns.org,DIRECT
+DOMAIN,plex.2699699.xyz
+DOMAIN,www.jotaro.icu
+#反代
+DOMAIN,myg.rfc.280454.xyz
+#tmdb反代
+DOMAIN,tmdb.buyikun.dpdns.org
+
+#小说
+DOMAIN,www.mayitxt.org
+DOMAIN-KEYWORD,minguoqiren
+
+#plex
+DOMAIN,v4.plex.tv
+DOMAIN,plexapp.com
+DOMAIN,plex.direct
+
+#yuheng
+DOMAIN-KEYWORD,yuheng,DIRECT
+DOMAIN-KEYWORD,yqc-premium,DIRECT
+
+#jstv
+DOMAIN,wogg.xxooo.cf,DIRECT
+DOMAIN,wogg.333232.xyz,DIRECT
+DOMAIN,www.wogg.one,DIRECT
+DOMAIN,www.wogg.lol,DIRECT
+DOMAIN,666.666291.xyz,DIRECT
+DOMAIN,www.muou.asia,DIRECT
+DOMAIN,www.muou.site,DIRECT
+DOMAIN,feimaoai.site,DIRECT
+DOMAIN,feimao666.fun,DIRECT
+DOMAIN,feimao888.fun,DIRECT
+DOMAIN,mihdr.top,DIRECT
+DOMAIN,www.miqk.cc,DIRECT
+DOMAIN,www.mihdr.top,DIRECT
+DOMAIN,www.zhizhenpan.fun,DIRECT
+DOMAIN,tv.yydsys.top,DIRECT
+DOMAIN,tv.yydsys.cc,DIRECT
+DOMAIN,tv.214521.xyz,DIRECT
+DOMAIN,woog.nxog.eu.org,DIRECT
+DOMAIN,xhww.net,DIRECT
+DOMAIN,2xiaopan.fun,DIRECT
+DOMAIN,erxiaofn.click,DIRECT
+DOMAIN,erxiaofn.site,DIRECT
+DOMAIN,www.xhww.net,DIRECT
+DOMAIN,xiaoer.5568.eu.org,DIRECT
+DOMAIN,xsayang.fun,DIRECT
+`;
+
+// Rule/outdoor：境外流媒体、Plex/Emby、阅读与订阅站点
+const customRuleSourceOutdoor = `
+# XPTV
+# 海外看
+DOMAIN-SUFFIX,cdn.kin6c1.com,全球加速
+DOMAIN-SUFFIX,cdn.iz8qkg.com,全球加速
+DOMAIN-SUFFIX,cdn.v82u1l.com,全球加速
+DOMAIN-SUFFIX,haiwaikan.com,全球加速
+# 欧乐影视
+DOMAIN-KEYWORD,olelive,全球加速
+DOMAIN-KEYWORD,olevod,全球加速
+DOMAIN-KEYWORD,olemovienews,全球加速
+DOMAIN,www.olehdtv.com,全球加速
+# missav
+DOMAIN,missav.com,全球加速
+# 独播库
+DOMAIN-KEYWORD,duboku,全球加速
+
+# emby
+# porn
+DOMAIN,pornemby.club,全球加速
+DOMAIN,misty.ltd,全球加速
+# 起点
+DOMAIN-KEYWORD,test.28.al,全球加速
+
+# pilipili
+# DOMAIN-KEYWORD,pilipili,全球加速
+# 纸片人
+DOMAIN,embyplus.org,全球加速
+# cc
+# DOMAIN-SUFFIX,carryz.net,全球加速
+# 星云
+DOMAIN-KEYWORD,nebula-media,全球加速
+# mefun
+DOMAIN,music.mefun.org,全球加速
+#jms
+DOMAIN,mini.jmsuper.com,新加坡节点
+#vercel
+DOMAIN,vercel.app,美国节点
+DOMAIN,vercel.buyikun.dpdns.org,美国节点
+#dpdns.org
+#DOMAIN-SUFFIX,dpdns.org,美国节点
+#sntp
+DOMAIN,lite.cn2gias.UK,美国节点
+
+#plex
+DOMAIN,plex.tv,美国节点
+DOMAIN,metadata-static.plex.tv,美国节点
+DOMAIN,metadata.provider.plex.tv,美国节点
+DOMAIN,provider.plex.tv,美国节点
+DOMAIN,analytics.plex.tv,美国节点
+DOMAIN,meta.plex.tv,美国节点
+DOMAIN,support.plex.tv,美国节点
+DOMAIN,forums.plex.tv,美国节点
+DOMAIN,downloads.plex.tv,美国节点
+DOMAIN,clients.plex.tv,美国节点
+DOMAIN,pubsub.plex.tv,美国节点
+DOMAIN,images.plex.tv,美国节点
+DOMAIN,together.plex.tv,美国节点
+DOMAIN,community.plex.tv,美国节点
+DOMAIN,scrobbles.plex.tv,美国节点
+DOMAIN,features.plex.tv,美国节点
+
+#trakt
+DOMAIN-KEYWORD,trakt.tv,美国节点
+#imdb
+DOMAIN-KEYWORD,imdb,美国节点
+#tmdb
+DOMAIN-KEYWORD,tmdb,美国节点
+
+# APTV
+# iptv中国地区（含港澳台）
+DOMAIN-KEYWORD,stream-link,美国节点
+DOMAIN,aktv.space,美国节点
+# epg
+DOMAIN-KEYWORD,epg,全球加速
+# 订阅代理
+DOMAIN,iptv.yang-1989.xyz,全球加速
+DOMAIN,tv.iill.top,全球加速
+
+
+#zlibrary
+DOMAIN-KEYWORD,z-lib,全球加速
+DOMAIN-KEYWORD,z-library,全球加速
+
+# Reader
+DOMAIN,app.koyeb.com,美国节点
+DOMAIN,www.koyeb.com,美国节点
+DOMAIN,constant-fulvia-buyikun-ff01d8b0.koyeb.app,美国节点
+DOMAIN-KEYWORD,69shuba,美国节点
+DOMAIN-KEYWORD,69shux,美国节点
+DOMAIN-KEYWORD,69yuedu,美国节点
+DOMAIN,twkan.com,美国节点
+
+#可莉
+DOMAIN-KEYWORD,kelee.one,美国节点
+`;
+
+// Rule/unsure：尚未确定归属的域名
+const customRuleSourceUnsure = `
+#plex
+DOMAIN,plex.20120714.xyz
+#琉璃门
+DOMAIN,iris.niceduck.lol
+#yang
+DOMAIN-SUFFIX,iill.top
+#鸢尾
+DOMAIN-SUFFIX,pvq.cc
+#nox
+DOMAIN,test.inemby.us.ci
+#fandai
+DOMAIN,emby.gszhou.dpdns.org
+DOMAIN,fandai.buyikun.dpdns.org
+`;
+
+/**
+ 解析 Loon 规则文本，转换为 mihomo 规则条目
+ @param {string} text 规则文本
+ @param {string} defaultPolicy 未标注策略时使用的默认策略
+ @param {(policy: string) => string} resolvePolicy 策略解析函数
+ @returns {{ key: string, rule: string }[]}
+*/
+function parseCustomRules(text, defaultPolicy, resolvePolicy) {
+  const rules = [];
+
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const [rawType, rawValue, rawPolicy] = line.split(',').map((part) => part.trim());
+    if (!rawType || !rawValue) continue;
+
+    const type = rawType.toUpperCase();
+    const value = rawValue.toLowerCase();
+    if (!customRuleTypes.includes(type)) continue;
+
+    rules.push({
+      key: `${type},${value}`,
+      rule: `${type},${value},${resolvePolicy(rawPolicy || defaultPolicy)}`,
+    });
+  }
+
+  return rules;
+}
+
+/**
+ 汇总全部自定义规则：按 airport → direct → outdoor → unsure 的顺序解析，
+ 重复域名保留首次出现的策略
+ @param {Set<string>} availablePolicies 当前配置中可用的策略组名
+ @returns {string[]}
+*/
+function buildCustomRules(availablePolicies) {
+  if (!enableCustomRules) return [];
+
+  const resolvePolicy = (policy) => {
+    // Loon 内建策略（如 DIRECT）直接映射为 mihomo 内建策略
+    const builtin = customRuleBuiltinPolicies[String(policy).toUpperCase()];
+    if (builtin) return builtin;
+
+    const mapped = customRulePolicyAlias[policy] || policy;
+    return availablePolicies.has(mapped) ? mapped : '默认代理';
+  };
+
+  const sources = [
+    [customRuleSourceAirport, customRuleDefaultPolicies.airport],
+    [customRuleSourceDirect, customRuleDefaultPolicies.direct],
+    [customRuleSourceOutdoor, customRuleDefaultPolicies.outdoor],
+    [customRuleSourceUnsure, customRuleDefaultPolicies.unsure],
+  ];
+
+  const seen = new Set();
+  const rules = [];
+
+  for (const [text, defaultPolicy] of sources) {
+    for (const { key, rule } of parseCustomRules(text, defaultPolicy, resolvePolicy)) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rules.push(rule);
+    }
+  }
+
+  return rules;
+}
+
 // 此处添加自定义节点，填入下方[]内（可选，留空则不生成“自建节点”策略组）
 // 自定义节点不参与节点过滤与 hosts 改写；与订阅节点（标准化后）重名时自动添加“自建-”前缀
 // 示例：
@@ -1051,6 +1383,17 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
   const baseGroupNames = baseGroups.filter((g) => ruleOptionsEnable[g.name]).map((g) => g.name);
   const customGroupNames = customGroup ? [customGroup.name] : [];
 
+  // 自定义规则可引用的策略组：固定组 + 已启用基组 + 地区组 + 自建节点组
+  const availablePolicies = new Set([
+    '默认代理',
+    '漏网之鱼',
+    '直连',
+    ...baseGroupNames,
+    ...groupNamesOfSelect,
+    ...customGroupNames,
+  ]);
+  const customRules = buildCustomRules(availablePolicies);
+
   functionalGroups.push({
     ...selectBaseOption,
     name: '默认代理',
@@ -1062,12 +1405,21 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
     ...serviceConfigs.filter((svc) => svc.name === 'AdBlock'),
     ...serviceConfigs.filter((svc) => svc.name !== 'AdBlock'),
   ];
+  // 自定义规则紧跟 AdBlock 之后，优先于内置分流规则集
+  let customRulesInjected = false;
   for (const svc of orderedServiceConfigs) {
     if (!ruleOptionsEnable[svc.name]) continue;
 
     functionalRules.push(...(svc.rules || []));
     Object.assign(finalRuleProviders, svc.providers || {});
+
+    if (svc.name === 'AdBlock') {
+      functionalRules.push(...customRules);
+      customRulesInjected = true;
+    }
   }
+  // AdBlock 未启用时，自定义规则置于最前
+  if (!customRulesInjected) functionalRules.unshift(...customRules);
 
   for (const svc of serviceConfigs) {
     if (!ruleOptionsEnable[svc.name]) continue;
