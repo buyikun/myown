@@ -182,6 +182,7 @@ DOMAIN,www.jotaro.icu
 DOMAIN,myg.rfc.280454.xyz
 #tmdb反代
 DOMAIN,tmdb.buyikun.dpdns.org
+DOMAIN,img.buyikun.dpdns.org
 
 #小说
 DOMAIN,www.mayitxt.org
