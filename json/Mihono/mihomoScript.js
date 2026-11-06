@@ -270,6 +270,8 @@ DOMAIN,vercel.buyikun.dpdns.org,美国节点
 #DOMAIN-SUFFIX,dpdns.org,美国节点
 #sntp
 DOMAIN,lite.cn2gias.UK,美国节点
+#todb
+DOMAIN,playback.theotherdb.org,新加坡节点
 
 #plex
 DOMAIN,plex.tv,美国节点
