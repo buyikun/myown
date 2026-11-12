@@ -324,6 +324,10 @@ DOMAIN,twkan.com,美国节点
 
 #可莉
 DOMAIN-KEYWORD,kelee.one,美国节点
+
+#API
+DOMAIN,api.abnt.it,全球加速
+DOMAIN,elysia.h-e.top,全球加速
 `;
 
 // Rule/unsure：尚未确定归属的域名
