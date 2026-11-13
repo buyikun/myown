@@ -224,6 +224,7 @@ DOMAIN,erxiaofn.site,DIRECT
 DOMAIN,www.xhww.net,DIRECT
 DOMAIN,xiaoer.5568.eu.org,DIRECT
 DOMAIN,xsayang.fun,DIRECT
+DOMAIN,joll.cc.cd,DIRECT
 `;
 
 // Rule/outdoor：境外流媒体、Plex/Emby、阅读与订阅站点
