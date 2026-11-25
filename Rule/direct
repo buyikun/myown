@@ -32,6 +32,9 @@ DOMAIN,myg.rfc.280454.xyz
 DOMAIN,tmdb.buyikun.dpdns.org
 DOMAIN,img.buyikun.dpdns.org
 DOMAIN,tg.buyikun.dpdns.org
+#弹幕
+DOMAIN,buyikun-danmu-api.ms.show
+DOMAIN,logvar.xxrmb.com
 
 #小说
 DOMAIN,www.mayitxt.org
